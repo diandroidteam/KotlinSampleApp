@@ -1,4 +1,4 @@
-package app.sample.diandroid.kotlinsampleapp
+package app.sample.diandroid.kotlinsampleapp.todoitems.bean
 
 
 class Item {

@@ -1,43 +1,37 @@
-package app.sample.diandroid.kotlinsampleapp
+package app.sample.diandroid.kotlinsampleapp.todoitems.view
 
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.EditText
 import android.widget.ListView
-
+import app.sample.diandroid.kotlinsampleapp.todoitems.bean.Item
+import app.sample.diandroid.kotlinsampleapp.R
+import app.sample.diandroid.kotlinsampleapp.login.view.LogInActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.ChildEventListener
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.content_main.*
 
-class MainActivity : AppCompatActivity() {
+class ItemsListActivity : AppCompatActivity() {
 
-    private var mFirebaseAuth: FirebaseAuth? = null
+    private lateinit var mFirebaseAuth: FirebaseAuth
     private var mFirebaseUser: FirebaseUser? = null
-    private var mDatabase: DatabaseReference? = null
+    private lateinit var mDatabase: DatabaseReference
     private var mUserId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val toolbar = findViewById<View>(R.id.toolbar) as Toolbar
         setSupportActionBar(toolbar)
 
         // Initialize Firebase Auth and Database Reference
         mFirebaseAuth = FirebaseAuth.getInstance()
-        mFirebaseUser = mFirebaseAuth!!.currentUser
+        mFirebaseUser = mFirebaseAuth.currentUser
         mDatabase = FirebaseDatabase.getInstance().reference
 
         if (mFirebaseUser == null) {
@@ -51,41 +45,36 @@ class MainActivity : AppCompatActivity() {
             val adapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1)
             listView.adapter = adapter
 
-            // Add items via the Button and EditText at the bottom of the view.
-            val text = findViewById<EditText>(R.id.todoText)
-            val button = findViewById<Button>(R.id.addButton)
-            button.setOnClickListener {
-                val item = Item(text.text.toString())
-                mDatabase!!.child("users").child(mUserId!!).child("items").push().setValue(item)
-                text.setText("")
+            addButton.setOnClickListener {
+                val item = Item(todoText.text.toString())
+                mDatabase.child("items").push().setValue(item)
+                todoText.setText("")
             }
 
             // Use Firebase to populate the list.
-            mDatabase!!.child("users").child(mUserId!!).child("items").addChildEventListener(object : ChildEventListener {
-                override fun onChildAdded(dataSnapshot: DataSnapshot, s: String) {
-                    adapter.add(dataSnapshot.child("title").value as String)
+            mDatabase.child("items").addChildEventListener(object : ChildEventListener {
+                override fun onCancelled(p0: DatabaseError?) {
                 }
 
-                override fun onChildChanged(dataSnapshot: DataSnapshot, s: String) {
-
+                override fun onChildMoved(p0: DataSnapshot?, p1: String?) {
                 }
 
-                override fun onChildRemoved(dataSnapshot: DataSnapshot) {
-                    adapter.remove(dataSnapshot.child("title").value as String)
+                override fun onChildChanged(p0: DataSnapshot?, p1: String?) {
                 }
 
-                override fun onChildMoved(dataSnapshot: DataSnapshot, s: String) {
-
+                override fun onChildAdded(dataSnapshot: DataSnapshot?, p1: String?) {
+                    adapter.add(dataSnapshot?.child("title")?.value as String)
                 }
 
-                override fun onCancelled(databaseError: DatabaseError) {
-
+                override fun onChildRemoved(dataSnapshot: DataSnapshot?) {
+                    adapter.remove(dataSnapshot?.child("title")?.value as String)
                 }
+
             })
 
             // Delete items when clicked
             listView.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
-                mDatabase!!.child("users").child(mUserId!!).child("items")
+                mDatabase.child("items")
                         .orderByChild("title")
                         .equalTo(listView.getItemAtPosition(position) as String)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -125,7 +114,7 @@ class MainActivity : AppCompatActivity() {
 
 
         if (id == R.id.action_logout) {
-            mFirebaseAuth!!.signOut()
+            mFirebaseAuth.signOut()
             loadLogInView()
         }
 
